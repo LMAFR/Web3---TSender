@@ -2,11 +2,12 @@
 
 import InputField from "@/components/ui/InputField";
 import TextField from "@/components/ui/TextField";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { tsenderAbi, erc20Abi, chainsToTSender } from "@/constants";
 import { useChainId, useConfig, useConnection } from "wagmi";
 import { readContract } from "@wagmi/core";
 import { toast } from "react-toastify";
+import { calculateTotal } from "@/utils/calculateTotal/calculateTotal";
 
 export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
@@ -19,6 +20,8 @@ export default function AirdropForm() {
   const config = useConfig(); 
   // use connected account:
   const account = useConnection();
+  // We will use useMemo to calculate the total amount to be airdropped whenever the amounts state changes (avoiding unnecessary recalculationswhen, for example, other field changes).   
+  const total: number = useMemo(() => calculateTotal(amounts), [amounts]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,6 +34,7 @@ export default function AirdropForm() {
     const approvedAmount = await getApprovedAmount(tsenderAdress);
     toast.info(`Approved amount: ${approvedAmount}`);
   }
+
     async function getApprovedAmount(tsenderAdress: string | null): Promise<number> {
         if (!tsenderAdress) {
             toast.error("TSender address not found for this chain");
@@ -48,6 +52,7 @@ export default function AirdropForm() {
         if (response) {
             return response as number;
         } else {
+            console.log(response)
             toast.error("Failed to fetch approved amount");
         }
 
