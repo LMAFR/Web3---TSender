@@ -1,24 +1,77 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Prerequisites
 
-First, run the development server:
+- Node.js (recommended: latest LTS)
+- A package manager: `pnpm` (recommended), `npm`, or `yarn`
+
+### WalletConnect Project ID
+
+This project uses RainbowKit/Wagmi and expects a WalletConnect Project ID.
+
+Create a `.env.local` file at the repo root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=YOUR_PROJECT_ID
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Running the app locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm install
+# or: npm install
+```
+
+Start the dev server:
+
+```bash
+pnpm dev
+# or: npm run dev
+```
+
+Then open:
+
+- http://localhost:3000
+
+## Running Anvil locally (local blockchain)
+
+This app is configured to include the `anvil` chain. If you see errors like:
+
+- `POST http://127.0.0.1:8545/ net::ERR_CONNECTION_REFUSED`
+
+it means Anvil is not running.
+
+### Install Foundry (macOS)
+
+Foundry includes `anvil`.
+
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
+
+### Start Anvil
+
+In a separate terminal:
+
+```bash
+anvil
+```
+
+Defaults:
+
+- RPC URL: `http://127.0.0.1:8545`
+- Chain ID: `31337`
+
+Keep Anvil running while you use the app.
+
+### Optional: Custom port
+
+```bash
+anvil --port 8545
+```
 
 ## Learn More
 
