@@ -3,6 +3,8 @@
 import InputField from "@/components/ui/InputField";
 import TextField from "@/components/ui/TextField";
 import { useState } from "react";
+import { tsenderAbi, erc20Abi, chainsToTSender } from "@/constants";
+import { useChainId } from "wagmi";
 
 export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
@@ -13,12 +15,10 @@ export default function AirdropForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    console.log("Submitting form with data:", {
-      tokenAddress,
-      recipients,
-      amounts,
-      memo,
-    });
+    // Use wagmi to get chain ID for the chain that has been connected to by the user.
+    const chainId = await useChainId();
+    // Use chainsToTSender to get the TSender address for the current chain (property tsender in constants.ts. We are not going to use no_check property here).
+    const tsenderAdress = chainsToTSender[chainId]["tsender"]
   }
 
   return (
