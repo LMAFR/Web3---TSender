@@ -46,7 +46,7 @@ export default function AirdropForm() {
         });
 
         if (response) {
-            return Number(response);
+            return response as number;
         } else {
             toast.error("Failed to fetch approved amount");
         }
