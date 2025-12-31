@@ -7,7 +7,7 @@ import { tsenderAbi, erc20Abi, chainsToTSender } from "@/constants";
 import { useChainId, useConfig, useConnection } from "wagmi";
 import { readContract } from "@wagmi/core";
 import { toast } from "react-toastify";
-import { calculateTotal } from "@/utils/calculateTotal/calculateTotal";
+import { calculateTotal } from "@/utils";
 
 export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
