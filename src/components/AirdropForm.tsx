@@ -6,6 +6,18 @@ import { useState } from "react";
 
 export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
+  const [recipients, setRecipients] = useState("");
+  const [amounts, setAmounts] = useState("");
+  const [memo, setMemo] = useState("");
+
+  async function handleSubmit() {
+    console.log('Submitting form with data:', {
+      tokenAddress,
+      recipients,
+      amounts,
+      memo,
+    });
+  }
 
   return (
     <form className="w-full">
@@ -29,13 +41,15 @@ export default function AirdropForm() {
             label="Recipients"
             placeholder="One address per line"
             rows={4}
+            value={recipients}
+            onChange={(e) => setRecipients(e.target.value)}
           />
 
           <TextField
             id="amounts"
             name="amounts"
             label="Amounts"
-            placeholder="One amount per line (same order as recipients)"
+            placeholder="100,200,300,..."
             rows={4}
           />
 
@@ -49,10 +63,11 @@ export default function AirdropForm() {
 
           <div className="flex justify-end">
             <button
-              type="submit"
-              className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                type="submit"
+                className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                onClick={handleSubmit}
             >
-              Submit
+            Submit
             </button>
           </div>
         </div>
