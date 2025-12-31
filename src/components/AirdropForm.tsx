@@ -5,20 +5,33 @@ import TextField from "@/components/ui/TextField";
 import { useState } from "react";
 import { tsenderAbi, erc20Abi, chainsToTSender } from "@/constants";
 import { useChainId } from "wagmi";
+import { toast } from "react-toastify";
 
 export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
   const [recipients, setRecipients] = useState("");
   const [amounts, setAmounts] = useState("");
   const [memo, setMemo] = useState("");
+  // Use wagmi to get chain ID for the chain that has been connected to by the user.
+  const chainId = useChainId();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    // Use wagmi to get chain ID for the chain that has been connected to by the user.
-    const chainId = await useChainId();
+    // 1a. If already approved, move to step 2.
+    // 1b. Approve our tsender contract to send our tokens.
+    // 2. Call the airdrop function on the tsender contract.
+    // 3. Wait for the transaction to be mined.
     // Use chainsToTSender to get the TSender address for the current chain (property tsender in constants.ts. We are not going to use no_check property here).
-    const tsenderAdress = chainsToTSender[chainId]["tsender"]
+    const tsenderAdress = chainsToTSender[chainId]["tsender"];
+
+    async function getApprovedAmount(tsenderAdress: string | null): Promise<number> {
+      if (!tsenderAdress) {
+        toast.error("TSender address not found for this chain");
+        return 0;
+      }
+
+      return 0;
+    }
   }
 
   return (
