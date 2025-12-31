@@ -4,7 +4,8 @@ import InputField from "@/components/ui/InputField";
 import TextField from "@/components/ui/TextField";
 import { useState } from "react";
 import { tsenderAbi, erc20Abi, chainsToTSender } from "@/constants";
-import { useChainId } from "wagmi";
+import { useChainId, useConfig, useConnection } from "wagmi";
+import { readContract } from "@wagmi/core";
 import { toast } from "react-toastify";
 
 export default function AirdropForm() {
@@ -14,6 +15,10 @@ export default function AirdropForm() {
   const [memo, setMemo] = useState("");
   // Use wagmi to get chain ID for the chain that has been connected to by the user.
   const chainId = useChainId();
+  // As we wrapped our app in Providers and providers includes the config we need, we can use useConfig to get it. We could also directly import the config from rainbowKitConfig.tsx but wagmi already provides it to us this way, so we are going to use wagmi way.
+  const config = useConfig(); 
+  // use connected account:
+  const account = useConnection();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,16 +28,31 @@ export default function AirdropForm() {
     // 3. Wait for the transaction to be mined.
     // Use chainsToTSender to get the TSender address for the current chain (property tsender in constants.ts. We are not going to use no_check property here).
     const tsenderAdress = chainsToTSender[chainId]["tsender"];
-
-    async function getApprovedAmount(tsenderAdress: string | null): Promise<number> {
-      if (!tsenderAdress) {
-        toast.error("TSender address not found for this chain");
-        return 0;
-      }
-
-      return 0;
-    }
+    const approvedAmount = await getApprovedAmount(tsenderAdress);
+    toast.info(`Approved amount: ${approvedAmount}`);
   }
+    async function getApprovedAmount(tsenderAdress: string | null): Promise<number> {
+        if (!tsenderAdress) {
+            toast.error("TSender address not found for this chain");
+            return 0;
+        }
+
+        // We do not use useReadContract here because we do not need to store the result as a state nor refresh the page when we run the function or similar. We just need to read a contract and get the result.
+        const response = await readContract(config, {
+            abi: erc20Abi,
+            address: tokenAddress as `0x${string}`,
+            functionName: "allowance",
+            args: [account.address, tsenderAdress as `0x${string}`],
+        });
+
+        if (response) {
+            return Number(response);
+        } else {
+            toast.error("Failed to fetch approved amount");
+        }
+
+        return 0;
+    }
 
   return (
     <form className="w-full" onSubmit={handleSubmit}>
