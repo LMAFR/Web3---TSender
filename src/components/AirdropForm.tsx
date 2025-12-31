@@ -10,8 +10,10 @@ export default function AirdropForm() {
   const [amounts, setAmounts] = useState("");
   const [memo, setMemo] = useState("");
 
-  async function handleSubmit() {
-    console.log('Submitting form with data:', {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    console.log("Submitting form with data:", {
       tokenAddress,
       recipients,
       amounts,
@@ -20,7 +22,7 @@ export default function AirdropForm() {
   }
 
   return (
-    <form className="w-full">
+    <form className="w-full" onSubmit={handleSubmit}>
       <div className="mx-auto w-full max-w-6xl rounded-lg border border-black/10 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
         <h1 className="mb-4 text-xl font-semibold">Airdrop Form</h1>
 
@@ -51,6 +53,8 @@ export default function AirdropForm() {
             label="Amounts"
             placeholder="100,200,300,..."
             rows={4}
+            value={amounts}
+            onChange={(e) => setAmounts(e.target.value)}
           />
 
           <TextField
@@ -59,15 +63,16 @@ export default function AirdropForm() {
             label="Memo"
             placeholder="Optional note"
             rows={3}
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
           />
 
           <div className="flex justify-end">
             <button
-                type="submit"
-                className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                onClick={handleSubmit}
+              type="submit"
+              className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
             >
-            Submit
+              Submit
             </button>
           </div>
         </div>
