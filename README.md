@@ -1,3 +1,5 @@
+This project consists of an airdrop form that allows the user to send tokens from his connected account to another account (recipient).
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Prerequisites
@@ -58,6 +60,12 @@ In a separate terminal:
 
 ```bash
 anvil
+```
+
+Or:
+
+```bash
+anvil --load-state ./tsender-deployed.json --port 8545 --host 127.0.0.1
 ```
 
 Defaults:
