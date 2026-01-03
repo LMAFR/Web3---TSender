@@ -4,110 +4,109 @@ import InputField from "@/components/ui/InputField";
 import TextField from "@/components/ui/TextField";
 import { useMemo, useState } from "react";
 import { tsenderAbi, erc20Abi, chainsToTSender } from "@/constants";
-import { useChainId, useConfig, useConnection, useWriteContract } from "wagmi";
+import { useChainId, useConfig, useConnection, useWriteContract, useReadContracts, useWaitForTransactionReceipt } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "@wagmi/core";
 import { toast } from "react-toastify";
 import { calculateTotal } from "@/utils";
 
 export default function AirdropForm() {
-  const [tokenAddress, setTokenAddress] = useState("");
-  const [recipients, setRecipients] = useState("");
-  const [amounts, setAmounts] = useState("");
-  const [memo, setMemo] = useState("");
-  // Use wagmi to get chain ID for the chain that has been connected to by the user.
-  const chainId = useChainId();
-  // As we wrapped our app in Providers and providers includes the config we need, we can use useConfig to get it. We could also directly import the config from rainbowKitConfig.tsx but wagmi already provides it to us this way, so we are going to use wagmi way.
-  const config = useConfig(); 
-  // use connected account:
-  const account = useConnection();
-  // We will use useMemo to calculate the total amount to be airdropped whenever the amounts state changes (avoiding unnecessary recalculationswhen, for example, other field changes).   
-  const total = useMemo(() => calculateTotal(amounts), [amounts]);
-  // Get async write contract function from wagmi:
-  const {data: hash, isPending, writeContractAsync} = useWriteContract();
+  const [tokenAddress, setTokenAddress] = useState("")
+    const [recipients, setRecipients] = useState("")
+    const [amounts, setAmounts] = useState("")
+    const config = useConfig()
+    const account = useConnection()
+    const chainId = useChainId()
+    const { data: tokenData } = useReadContracts({
+        contracts: [
+            {
+                abi: erc20Abi,
+                address: tokenAddress as `0x${string}`,
+                functionName: "decimals",
+            },
+            {
+                abi: erc20Abi,
+                address: tokenAddress as `0x${string}`,
+                functionName: "name",
+            },
+            {
+                abi: erc20Abi,
+                address: tokenAddress as `0x${string}`,
+                functionName: "balanceOf",
+                args: [account.address],
+            },
+        ],
+    })
+    const [hasEnoughTokens, setHasEnoughTokens] = useState(true)
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    // 1a. If already approved, move to step 2.
-    // 1b. Approve our tsender contract to send our tokens.
-    // 2. Call the airdrop function on the tsender contract.
-    // 3. Wait for the transaction to be mined.
-    // Use chainsToTSender to get the TSender address for the current chain (property tsender in constants.ts. We are not going to use no_check property here).
-    const tsenderAdress = chainsToTSender[chainId]["tsender"];
-    const approvedAmount = await getApprovedAmount(tsenderAdress);
-    toast.info(`Approved amount: ${approvedAmount}`);
+    const { data: hash, isPending, error, writeContractAsync } = useWriteContract()
+    const { isLoading: isConfirming, isSuccess: isConfirmed, isError } = useWaitForTransactionReceipt({
+        confirmations: 1,
+        hash,
+    })
 
-    if (approvedAmount < total) {
-      const approvalHash = await writeContractAsync({
-        abi: erc20Abi,
-        address: tokenAddress as `0x${string}`,
-        functionName: "approve",
-        args: [tsenderAdress as `0x${string}`, BigInt(total)],
-      })
-      const approvalReceipt = await waitForTransactionReceipt(config, {
-        hash: approvalHash,
-      });
-      if (approvalReceipt.status === "success") {
-        toast.success(`Approval successful: ${approvalHash}`);
+    const total: number = useMemo(() => calculateTotal(amounts), [amounts])
+
+
+    async function handleSubmit() {
+      const contractType = "tsender"
+      const tSenderAddress = chainsToTSender[chainId][contractType]
+      const result = await getApprovedAmount(tSenderAddress)
+
+      if (result < total) {
+          const approvalHash = await writeContractAsync({
+              abi: erc20Abi,
+              address: tokenAddress as `0x${string}`,
+              functionName: "approve",
+              args: [tSenderAddress as `0x${string}`, BigInt(total)],
+          })
+          const approvalReceipt = await waitForTransactionReceipt(config, {
+              hash: approvalHash,
+          })
+
+          console.log("Approval confirmed:", approvalReceipt)
+
+          await writeContractAsync({
+              abi: tsenderAbi,
+              address: tSenderAddress as `0x${string}`,
+              functionName: "airdropERC20",
+              args: [
+                  tokenAddress,
+                  // Comma or new line separated
+                  recipients.split(/[,\n]+/).map(addr => addr.trim()).filter(addr => addr !== ''),
+                  amounts.split(/[,\n]+/).map(amt => amt.trim()).filter(amt => amt !== ''),
+                  BigInt(total),
+              ],
+          })
+      } else {
+          await writeContractAsync({
+              abi: tsenderAbi,
+              address: tSenderAddress as `0x${string}`,
+              functionName: "airdropERC20",
+              args: [
+                  tokenAddress,
+                  // Comma or new line separated
+                  recipients.split(/[,\n]+/).map(addr => addr.trim()).filter(addr => addr !== ''),
+                  amounts.split(/[,\n]+/).map(amt => amt.trim()).filter(amt => amt !== ''),
+                  BigInt(total),
+              ],
+          },)
       }
 
-      await writeContractAsync({
-        abi: tsenderAbi,
-        address: tsenderAdress as `0x${string}`,
-        functionName: "airdropERC20",
-        args: [
-          tokenAddress as `0x${string}`,
-          recipients.split(/[,\n]+/).map(addr => addr.trim()).filter(addr => addr.length > 0),
-          amounts.split(/[,\n]+/).map(amount => BigInt(amount.trim())).filter(amount => amount > 0),
-          BigInt(total),
-        ],
-      }).then(async (airdropHash) => {
-        const airdropReceipt = await waitForTransactionReceipt(config, {
-          hash: airdropHash,
-        });
-        if (airdropReceipt.status === "success") {
-          toast.success(`Airdrop successful: ${airdropHash}`);
-        }
-      });
-    } else {
-      await writeContractAsync({
-        abi: tsenderAbi,
-        address: tsenderAdress as `0x${string}`,
-        functionName: "airdropERC20",
-        args: [
-          tokenAddress as `0x${string}`,
-          recipients.split(/[,\n]+/).map(addr => addr.trim()).filter(addr => addr.length > 0),
-          amounts.split(/[,\n]+/).map(amount => BigInt(amount.trim())).filter(amount => amount > 0),
-          BigInt(total),
-        ],
-      }).then(async (airdropHash) => {
-        const airdropReceipt = await waitForTransactionReceipt(config, {
-          hash: airdropHash,
-        });
-        if (airdropReceipt.status === "success") {
-          toast.success(`Airdrop successful: ${airdropHash}`);
-        }
-      });
-    }
   }
 
-    
-
-    async function getApprovedAmount(tsenderAdress: string | null): Promise<number> {
-        if (!tsenderAdress) {
-            toast.error("TSender address not found for this chain");
-            return 0;
-        }
-
-        // We do not use useReadContract here because we do not need to store the result as a state nor refresh the page when we run the function or similar. We just need to read a contract and get the result.
-        const response = await readContract(config, {
-            abi: erc20Abi,
-            address: tokenAddress as `0x${string}`,
-            functionName: "allowance",
-            args: [account.address, tsenderAdress as `0x${string}`],
-        });
-           
-        return response as number;
-    }
+  async function getApprovedAmount(tSenderAddress: string | null): Promise<number> {
+      if (!tSenderAddress) {
+          alert("This chain only has the safer version!")
+          return 0
+      }
+      const response = await readContract(config, {
+          abi: erc20Abi,
+          address: tokenAddress as `0x${string}`,
+          functionName: "allowance",
+          args: [account.address, tSenderAddress as `0x${string}`],
+      })
+      return response as number
+  }
 
   return (
     <form className="w-full" onSubmit={handleSubmit}>
@@ -145,7 +144,7 @@ export default function AirdropForm() {
             onChange={(e) => setAmounts(e.target.value)}
           />
 
-          <TextField
+          {/* <TextField
             id="memo"
             name="memo"
             label="Memo"
@@ -153,7 +152,7 @@ export default function AirdropForm() {
             rows={3}
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-          />
+          /> */}
 
           <div className="flex justify-end">
             <button
