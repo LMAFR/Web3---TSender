@@ -2,6 +2,13 @@
 
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import E2EConnectButton from "@/components/E2EConnectButton";
+
+function isE2EEnabled() {
+  if (process.env.NEXT_PUBLIC_E2E === "true") return true;
+  if (typeof window !== "undefined" && (window as any).__E2E__ === true) return true;
+  return false;
+}
 
 export default function Header() {
   return (
@@ -15,7 +22,7 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center">
-          <ConnectButton />
+          {isE2EEnabled() ? <E2EConnectButton /> : <ConnectButton />}
         </div>
       </div>
     </header>

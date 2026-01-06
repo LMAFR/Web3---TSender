@@ -53,7 +53,8 @@ export default function AirdropForm({ isUnsafeMode, onModeChange }: AirdropFormP
     const total: number = useMemo(() => calculateTotal(amounts), [amounts])
 
 
-    async function handleSubmit() {
+        async function handleSubmit(e?: React.FormEvent) {
+            e?.preventDefault();
       const contractType = isUnsafeMode ? "no_check" : "tsender"
       const tSenderAddress = chainsToTSender[chainId][contractType]
       const result = await getApprovedAmount(tSenderAddress)
@@ -175,7 +176,7 @@ export default function AirdropForm({ isUnsafeMode, onModeChange }: AirdropFormP
     }, [tokenAddress, total, tokenData]);
 
   return (
-    <form className="w-full" onSubmit={handleSubmit}>
+    <form className="w-full" onSubmit={(e) => void handleSubmit(e)}>
       <div className="mx-auto w-full max-w-6xl rounded-lg border border-black/10 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
         <h1 className="mb-4 text-xl font-semibold">Airdrop Form</h1>
 
@@ -232,12 +233,12 @@ export default function AirdropForm({ isUnsafeMode, onModeChange }: AirdropFormP
               </div>
           </div>
 
-          <button
+                    <button
+                        type="submit"
             className={`cursor-pointer flex items-center justify-center w-full py-3 rounded-[9px] text-white transition-colors font-semibold relative border ${isUnsafeMode
                 ? "bg-red-500 hover:bg-red-600 border-red-500"
                 : "bg-blue-500 hover:bg-blue-600 border-blue-500"
                 } ${!hasEnoughTokens && tokenAddress ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={handleSubmit}
             disabled={isPending || (!hasEnoughTokens && tokenAddress !== "")}
         >
             {/* Gradient */}
