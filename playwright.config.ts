@@ -41,8 +41,11 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'PORT=3001 NEXT_PUBLIC_E2E=true NEXT_PUBLIC_ANVIL_RPC_URL=http://127.0.0.1:8545 pnpm run dev',
+    command:
+      'PORT=3001 NEXT_PUBLIC_E2E=true NEXT_PUBLIC_ANVIL_RPC_URL=http://127.0.0.1:8545 pnpm run build && ' +
+      'PORT=3001 NEXT_PUBLIC_E2E=true NEXT_PUBLIC_ANVIL_RPC_URL=http://127.0.0.1:8545 pnpm run start',
     url: 'http://127.0.0.1:3001',
-    reuseExistingServer: false
+    reuseExistingServer: false,
+    timeout: 120_000,
   },
 });
